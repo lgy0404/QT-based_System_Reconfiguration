@@ -1,0 +1,1164 @@
+#include "widget.h"
+#include "ui_widget.h"
+#include "customtabstyle.h"
+#include <QSerialPortInfo>   //串口信息类
+#include <QMessageBox>
+#include <QString>
+
+#include <QCoreApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QJsonValue>
+#include <QDebug>
+#include <QFile>
+#include <QDateTime>
+#include <QStandardPaths>
+#include <QDir>
+#include <QScreen>
+#include <QDesktopWidget>
+
+#include <QPainter> // 包含QPainter类
+#include <QProxyStyle> // 包含QProxyStyle类
+
+#include <QTimer>
+#include <QInputDialog>
+
+#include <QFontDatabase>
+
+#include <QJsonDocument>
+
+
+//构造函数
+Widget::Widget(QWidget *parent) :QWidget(parent),ui(new Ui::Widget)
+{
+    ui->setupUi(this);
+
+
+    // 定制tab样式，设置tab的位置
+    ui->tabWidget->setTabPosition(QTabWidget::West);
+    ui->tabWidget->tabBar()->setStyle(new CustomTabStyle); // 设置tab的样式
+    ui->tabWidget->setStyleSheet("QTabWidget::pane{ \
+            border: 1px solid #7f7f7f;\
+        }");
+
+    //定制窗体样式
+    this->setStyleSheet("background-color:rgb(240, 240, 240);");
+    QRect screenGeometry = qApp->screens().at(0)->geometry();// 获取主显示器的大小
+    int x = (screenGeometry.width() - width()) / 2;// 计算窗口的左上角位置，使其在屏幕中央显示
+    int y = (screenGeometry.height() - height()) / 2;
+    move(x, y);
+
+
+    //“串口工具”模块功能实现，自动搜索可用串口并在UI中进行显示
+    QStringList serialNamePort;
+    serialPort = new QSerialPort(this);
+    connect(serialPort,SIGNAL(readyRead()),this,SLOT(serialPortReadyRead_slot()));
+    foreach(const QSerialPortInfo &info ,QSerialPortInfo::availablePorts())
+    {
+        serialNamePort<<info.portName();
+    }
+    ui->serialCb->addItems(serialNamePort);
+
+
+    //“485X配置”模块功能实现（主机模式）
+    //柜型图片显示部分
+    connect(ui->Cabinet_comboBox_4851_master_c1, SIGNAL(currentIndexChanged(QString)), this, SLOT(onComboBoxCurrentIndexChanged(QString)));    // 柜型图片显示，将QComboBox的currentIndexChanged信号连接到槽
+    QPixmap cbbrCabinetPixmap(":/images/696CBBR-close-close.png");// Initialize the images map
+    QPixmap cbCabinetPixmap(":/images/696CB-close-close.png");
+    QPixmap beCabinetPixmap(":/images/BE-open.png");
+    QPixmap cCabinetPixmap(":/images/C-open.png");
+    QPixmap dCabinetPixmap(":/images/D.png");
+    QPixmap deCabinetPixmap(":/images/DE-openPE.png");
+    QPixmap fCabinetPixmap(":/images/F-open.png");
+    QPixmap mCabinetPixmap(":/images/M.png");
+    QPixmap ptCabinetPixmap(":/images/PT.png");
+    QPixmap ptc500CabinetPixmap(":/images/PTC500-open.png");
+    QPixmap ptc600CabinetPixmap(":/images/PTC600-open.png");
+    QPixmap slCabinetPixmap(":/images/SL-close.png");
+    QPixmap sv25sv20CabinetPixmap(":/images/SV25SV20-open.png");
+    QPixmap svCabinetPixmap(":/images/SV-open-open.png");
+    QPixmap v25v20CabinetPixmap(":/images/V25V20-open-open.png");
+    QPixmap vCabinetPixmap(":/images/V-open-close.png");
+
+    if (cCabinetPixmap.isNull() || dCabinetPixmap.isNull() || vCabinetPixmap.isNull()) {// 检查柜型图片是否加载成功
+        qDebug() << "Image(s) not loaded!";
+    } else {
+        m_images.insert("696CBBR柜", cbbrCabinetPixmap);
+        m_images.insert("696CB柜", cbCabinetPixmap);
+        m_images.insert("BE柜", beCabinetPixmap);
+        m_images.insert("C柜", cCabinetPixmap);
+        m_images.insert("D柜", dCabinetPixmap);
+        m_images.insert("DE柜", deCabinetPixmap);
+        m_images.insert("F柜", fCabinetPixmap);
+        m_images.insert("M柜", mCabinetPixmap);
+        m_images.insert("PT柜", ptCabinetPixmap);
+        m_images.insert("PTC500柜", ptc500CabinetPixmap);
+        m_images.insert("PTC600柜", ptc600CabinetPixmap);
+        m_images.insert("SL柜", slCabinetPixmap);
+        m_images.insert("SV25SV20柜", sv25sv20CabinetPixmap);
+        m_images.insert("SV柜", svCabinetPixmap);
+        m_images.insert("V25V20柜",v25v20CabinetPixmap);
+        m_images.insert("V柜", vCabinetPixmap);
+    }
+
+    //设置默认传感器类型
+    // 字符串列表用于存储下拉菜单中的传感器类型
+    QStringList sensorTypes;
+    sensorTypes << "TEV 和超声波（断路器）" << "断路器触头温度" << "内部气压" << "分合闸时间" << "动作电流" << "TEV 和超声波（母线）" << "母线与断路器连接处温度" << "绝缘电阻" << "TEV 和超声波（出线电缆）" << "电缆接头温度";
+
+    // 循环遍历每个表格部件（c1到c8）
+    for (int mode = 4851; mode <= 4853; ++mode) {
+        for (int c = 1; c <= 8; c++) {
+            QTableWidget *table = findChild<QTableWidget*>("tableWidget_" + QString::number(mode) + "_master_c" + QString::number(c));
+            if (!table) {
+                continue; // 如果未找到表格部件，则跳过
+            }
+
+            // 为表格中的每个单元格设置下拉菜单
+            int rowCount = table->rowCount();
+            int colCount = table->columnCount();
+            for (int row = 0; row < rowCount; ++row) {
+                for (int col = 0; col < colCount; ++col) {
+                    QComboBox *comboBox = new QComboBox();
+                    comboBox->addItems(sensorTypes);
+                    table->setCellWidget(row, col, comboBox);
+                }
+            }
+
+            // 为每个单元格设置默认传感器类型
+            static_cast<QComboBox*>(table->cellWidget(1, 0))->setCurrentIndex(1);
+            static_cast<QComboBox*>(table->cellWidget(2, 0))->setCurrentIndex(2);
+            static_cast<QComboBox*>(table->cellWidget(3, 0))->setCurrentIndex(3);
+            static_cast<QComboBox*>(table->cellWidget(4, 0))->setCurrentIndex(4);
+            static_cast<QComboBox*>(table->cellWidget(5, 0))->setCurrentIndex(5);
+            static_cast<QComboBox*>(table->cellWidget(6, 0))->setCurrentIndex(6);
+            static_cast<QComboBox*>(table->cellWidget(7, 0))->setCurrentIndex(7);
+        }
+
+    setupTableWidget();//设置列宽
+
+    //加载485主机模式下机柜1-8的图片，并实现自动切换
+    QList<QPair<QComboBox*, QLabel*>> comboBoxLabelPairs = {
+        { ui->Cabinet_comboBox_4851_master_c1, ui->picture_lable_4851_master_c1 },
+        { ui->Cabinet_comboBox_4851_master_c2, ui->picture_lable_4851_master_c2 },
+        { ui->Cabinet_comboBox_4851_master_c3, ui->picture_lable_4851_master_c3 },
+        { ui->Cabinet_comboBox_4851_master_c4, ui->picture_lable_4851_master_c4 },
+        { ui->Cabinet_comboBox_4851_master_c5, ui->picture_lable_4851_master_c5 },
+        { ui->Cabinet_comboBox_4851_master_c6, ui->picture_lable_4851_master_c6 },
+        { ui->Cabinet_comboBox_4851_master_c7, ui->picture_lable_4851_master_c7 },
+        { ui->Cabinet_comboBox_4851_master_c8, ui->picture_lable_4851_master_c8 },
+        { ui->Cabinet_comboBox_4852_master_c1, ui->picture_lable_4852_master_c1 },
+        { ui->Cabinet_comboBox_4852_master_c2, ui->picture_lable_4852_master_c2 },
+        { ui->Cabinet_comboBox_4852_master_c3, ui->picture_lable_4852_master_c3 },
+        { ui->Cabinet_comboBox_4852_master_c4, ui->picture_lable_4852_master_c4 },
+        { ui->Cabinet_comboBox_4852_master_c5, ui->picture_lable_4852_master_c5 },
+        { ui->Cabinet_comboBox_4852_master_c6, ui->picture_lable_4852_master_c6 },
+        { ui->Cabinet_comboBox_4852_master_c7, ui->picture_lable_4852_master_c7 },
+        { ui->Cabinet_comboBox_4852_master_c8, ui->picture_lable_4852_master_c8 },
+        { ui->Cabinet_comboBox_4853_master_c1, ui->picture_lable_4853_master_c1 },
+        { ui->Cabinet_comboBox_4853_master_c2, ui->picture_lable_4853_master_c2 },
+        { ui->Cabinet_comboBox_4853_master_c3, ui->picture_lable_4853_master_c3 },
+        { ui->Cabinet_comboBox_4853_master_c4, ui->picture_lable_4853_master_c4 },
+        { ui->Cabinet_comboBox_4853_master_c5, ui->picture_lable_4853_master_c5 },
+        { ui->Cabinet_comboBox_4853_master_c6, ui->picture_lable_4853_master_c6 },
+        { ui->Cabinet_comboBox_4853_master_c7, ui->picture_lable_4853_master_c7 },
+        { ui->Cabinet_comboBox_4853_master_c8, ui->picture_lable_4853_master_c8 }
+
+    };
+
+    for (auto pair : comboBoxLabelPairs) {
+        // 触发comboBox的currentIndexChanged信号
+        QMetaObject::invokeMethod(pair.first, "currentIndexChanged", Qt::QueuedConnection, Q_ARG(QString, pair.first->currentText()));
+    }
+
+    for (auto pair : comboBoxLabelPairs) {
+        connect(pair.first, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged), [this, pair](){
+            QPixmap image = m_images.value(pair.first->currentText());
+            pair.second->setPixmap(image);
+        });
+    }
+}
+
+
+    // “UART串口配置”模块功能实现，设置 radioButton_uart_baudrate_9600 为默认选中
+    ui->radioButton_uart_baudrate_9600->setChecked(true);
+
+
+    //“系统设计”模块功能实现
+    ui->userTableWidget->setColumnCount(6);
+    ui->userTableWidget->setHorizontalHeaderLabels({"ID", "用户名", "密码", "手机号", "部门", "账户类型"});
+
+    //用户信息保存
+    usersFile.setFileName(QDir::homePath() + "/Desktop/users.txt");
+    loadUsers();
+
+    connect(ui->userTableWidget, &QTableWidget::itemChanged, this, &Widget::onUserTableItemChanged);
+
+    for (int row = 0; row < ui->userTableWidget->rowCount(); ++row) {
+         QComboBox *departmentComboBox = qobject_cast<QComboBox *>(ui->userTableWidget->cellWidget(row, 4));
+         QComboBox *accountTypeComboBox = qobject_cast<QComboBox *>(ui->userTableWidget->cellWidget(row, 5));
+
+         if (departmentComboBox) {
+             connect(departmentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Widget::onComboBoxIndexChanged);
+         }
+         if (accountTypeComboBox) {
+             connect(accountTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Widget::onComboBoxIndexChanged);
+         }
+     }
+
+    //防恶意攻击机制
+     fileWatcherTimer = new QTimer(this);
+       connect(fileWatcherTimer, &QTimer::timeout, this, &Widget::checkFileExistence);
+       fileWatcherTimer->start(1000); // 每1秒检查一次文件是否存在
+
+
+     // 实时显示系统时间
+     // 加载字体
+     int fontId = QFontDatabase::addApplicationFont(":/digital-7.ttf");
+     if (fontId != -1) {
+         QString fontFamily = QFontDatabase::applicationFontFamilies(fontId).at(0);
+         QFont font(fontFamily, 36, QFont::Bold);
+
+         // 设置字体、颜色和阴影效果
+         QString style = QString("font:18px '%1';").arg(fontFamily);
+         style += "text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);";
+         ui->dateTimeLabel->setFont(font);
+         ui->dateTimeLabel->setStyleSheet(style);
+     }
+
+         timer = new QTimer(this);
+         connect(timer, &QTimer::timeout, this, &Widget::updateDateTime);
+         timer->start(1000);
+
+         updateDateTime();
+}
+
+
+//析构函数
+Widget::~Widget()
+{
+    delete ui;
+}
+
+
+//"串口工具"部分槽函数
+//打开串口的槽函数
+void Widget::on_openBt_clicked()
+{
+    QSerialPort::BaudRate baudRate;
+    QSerialPort::DataBits dataBits;
+    QSerialPort::StopBits stopBits;
+    QSerialPort::Parity checkBits;
+
+    if(ui->baundrateCb->currentText() == "4800"){
+        baudRate = QSerialPort::Baud4800;
+    }else if(ui->baundrateCb->currentText() == "9600"){
+         baudRate = QSerialPort::Baud9600;
+    }else if(ui->baundrateCb->currentText() == "115200"){
+         baudRate = QSerialPort::Baud115200;
+    }
+
+    if(ui->dataCb->currentText() == "5"){
+        dataBits = QSerialPort::Data5;
+    }else if(ui->dataCb->currentText() == "6"){
+        dataBits = QSerialPort::Data6;
+    }else if(ui->dataCb->currentText() == "7"){
+        dataBits = QSerialPort::Data7;
+    }else if(ui->dataCb->currentText() == "8"){
+        dataBits = QSerialPort::Data8;
+    }
+
+    if(ui->stopCb->currentText() == "1"){
+       stopBits = QSerialPort::OneStop;
+    }else if(ui->stopCb->currentText() == "1.5"){
+       stopBits = QSerialPort::OneAndHalfStop;
+    }else if(ui->stopCb->currentText() == "2"){
+       stopBits = QSerialPort::TwoStop;
+    }
+
+    if(ui->checkCb->currentText() == "none"){
+        checkBits = QSerialPort::NoParity;
+    }
+
+    serialPort->setPortName(ui->serialCb->currentText());
+    serialPort->setBaudRate(baudRate);
+    serialPort->setDataBits(dataBits);
+    serialPort->setStopBits(stopBits);
+    serialPort->setParity(checkBits);
+
+    if(serialPort->open(QIODevice::ReadWrite) == true){
+        QMessageBox::information(this,"提示","串口打开成功");
+    }else{
+        QMessageBox::critical(this,"提示","串口打开失败");
+    }
+
+}
+
+//关闭串口槽函数
+void Widget::on_closeBt_clicked()
+{
+    serialPort->close();
+}
+
+
+//读取串口数据
+void Widget::serialPortReadyRead_slot()
+{
+    QString buf;
+    buf = QString(serialPort->readAll());
+    ui->receiveEdit->appendPlainText(buf);
+}
+
+//数据发送槽函数
+void Widget::on_sendBt_clicked()
+{
+    serialPort->write(ui->sendEdit->text().toLocal8Bit().data());
+}
+
+//接受框清空槽函数
+void Widget::on_clearBt_clicked()
+{
+    ui->receiveEdit->clear();
+}
+
+
+//系统帮助提示
+void Widget::on_helpBt_clicked()
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("系统帮助");
+    msgBox.setTextFormat(Qt::RichText);
+    msgBox.setTextInteractionFlags(Qt::TextSelectableByMouse);
+    QString text = "面向配网设备的可重构数据采集系统配置软件v2.0<br>";
+    text += "更新时间:2023.3.22<br>";
+    text += "开发者:刘广义 QQ:2528379691<br>";
+    msgBox.setText(text);
+    QLabel *label = msgBox.findChild<QLabel*>();
+    label->setAlignment(Qt::AlignCenter);
+    msgBox.exec();
+}
+
+//柜型图片显示槽函数
+void Widget::onComboBoxCurrentIndexChanged(const QString &text)
+{
+    // Get the selected image from the map
+    QPixmap image = m_images.value(text);
+
+    // Set the image to the QLabel
+    ui->picture_lable_4851_master_c1->setPixmap(image);//设置4851主机模式柜1的默认图片
+}
+
+//窗口调整部分的槽函数
+void Widget::on_syscloseBt_clicked()//系统退出槽函数
+{
+    this->close();
+}
+
+void Widget::on_fullscrBt_clicked()//进入全屏槽函数
+{
+    this->showFullScreen();
+}
+
+
+void Widget::on_fullscrcloseBt_clicked()//退出窗口最大化槽函数
+{
+    this->showNormal();
+}
+
+
+//设置QTableWidget的列宽为固定值，使其可以将传感器的名称完全显示
+void Widget::setupTableWidget()
+{
+    qDebug() << "执行列宽设置函数";
+    // 设置列宽
+    ui->tableWidget_4851_master_c1->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c2->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c3->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c4->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c5->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c6->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c7->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4851_master_c8->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c1->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c2->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c3->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c4->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c5->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c6->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c7->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4852_master_c8->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c1->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c2->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c3->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c4->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c5->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c6->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c7->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+    ui->tableWidget_4853_master_c8->setColumnWidth(0, 180); // 设置第一列的宽度为250像素
+}
+
+//添加传感器的函数
+void Widget::addRowToTableWidget(QTableWidget* tableWidget)
+{
+    int rowCount = tableWidget->rowCount();
+    tableWidget->insertRow(rowCount);
+    QTableWidgetItem* newItem = new QTableWidgetItem(QString("传感器%1").arg(rowCount + 1));
+    tableWidget->setVerticalHeaderItem(rowCount, newItem);
+
+    QStringList sensorTypes;
+    sensorTypes << "TEV 和超声波（断路器）" << "断路器触头温度" << "内部气压" << "分合闸时间" << "动作电流" << "TEV 和超声波（母线）" << "母线与断路器连接处温度" << "绝缘电阻" << "TEV 和超声波（出线电缆）" << "电缆接头温度";
+
+    QComboBox* comboBox = new QComboBox();
+    comboBox->addItems(sensorTypes);
+    tableWidget->setCellWidget(rowCount, 0, comboBox);
+}
+
+//删除传感器的函数
+void Widget::deleteRowFromTableWidget(QTableWidget* tableWidget)
+{
+    int rowCount = tableWidget->rowCount();
+    if (rowCount > 0) {
+        tableWidget->removeRow(rowCount - 1);
+    }
+}
+
+/*
+//传感器添加和删除的通用槽函数
+// 添加传感器的通用槽函数
+void Widget::on_addBt_clicked(QTableWidget* tableWidget)
+{
+    addRowToTableWidget(tableWidget);
+}
+
+// 删除传感器的通用槽函数
+void Widget::on_deleteBt_clicked(QTableWidget* tableWidget)
+{
+    deleteRowFromTableWidget(tableWidget);
+}
+*/
+
+//4851主机模式柜1添加传感器的槽函数
+void Widget::on_addBt_4851_master_c1_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c1);
+}
+
+//4851主机模式柜1删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c1_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c1);
+}
+
+//4851主机模式柜2添加传感器的槽函数
+void Widget::on_addBt_4851_master_c2_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c2);
+}
+
+//4851主机模式柜2删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c2_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c2);
+}
+
+// 4851主机模式柜3添加传感器的槽函数
+void Widget::on_addBt_4851_master_c3_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c3);
+}
+
+// 4851主机模式柜3删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c3_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c3);
+}
+
+// 4851主机模式柜4添加传感器的槽函数
+void Widget::on_addBt_4851_master_c4_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c4);
+}
+
+// 4851主机模式柜4删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c4_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c4);
+}
+
+// 4851主机模式柜5添加传感器的槽函数
+void Widget::on_addBt_4851_master_c5_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c5);
+}
+
+// 4851主机模式柜5删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c5_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c5);
+}
+
+// 4851主机模式柜6添加传感器的槽函数
+void Widget::on_addBt_4851_master_c6_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c6);
+}
+
+// 4851主机模式柜6删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c6_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c6);
+}
+
+// 4851主机模式柜7添加传感器的槽函数
+void Widget::on_addBt_4851_master_c7_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c7);
+}
+
+// 4851主机模式柜7删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c7_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c7);
+}
+
+//4851主机模式柜8添加传感器的槽函数
+void Widget::on_addBt_4851_master_c8_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4851_master_c8);
+}
+
+//4851主机模式柜8删除传感器的槽函数
+void Widget::on_deleteBt_4851_master_c8_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4851_master_c8);
+}
+
+//4852主机模式柜1添加传感器的槽函数
+void Widget::on_addBt_4852_master_c1_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c1);
+}
+
+//4852主机模式柜1删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c1_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c1);
+}
+
+//4852主机模式柜2添加传感器的槽函数
+void Widget::on_addBt_4852_master_c2_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c2);
+}
+
+//4852主机模式柜2删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c2_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c2);
+}
+
+// 4852主机模式柜3添加传感器的槽函数
+void Widget::on_addBt_4852_master_c3_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c3);
+}
+
+// 4852主机模式柜3删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c3_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c3);
+}
+
+// 4852主机模式柜4添加传感器的槽函数
+void Widget::on_addBt_4852_master_c4_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c4);
+}
+
+// 4852主机模式柜4删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c4_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c4);
+}
+
+// 4852主机模式柜5添加传感器的槽函数
+void Widget::on_addBt_4852_master_c5_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c5);
+}
+
+// 4852主机模式柜5删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c5_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c5);
+}
+
+// 4852主机模式柜6添加传感器的槽函数
+void Widget::on_addBt_4852_master_c6_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c6);
+}
+
+// 4852主机模式柜6删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c6_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c6);
+}
+
+// 4852主机模式柜7添加传感器的槽函数
+void Widget::on_addBt_4852_master_c7_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c7);
+}
+
+// 4852主机模式柜7删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c7_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c7);
+}
+
+//4852主机模式柜8添加传感器的槽函数
+void Widget::on_addBt_4852_master_c8_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4852_master_c8);
+}
+
+//4852主机模式柜8删除传感器的槽函数
+void Widget::on_deleteBt_4852_master_c8_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4852_master_c8);
+}
+
+//4853主机模式柜1添加传感器的槽函数
+void Widget::on_addBt_4853_master_c1_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c1);
+}
+
+//4853主机模式柜1删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c1_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c1);
+}
+
+//4853主机模式柜2添加传感器的槽函数
+void Widget::on_addBt_4853_master_c2_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c2);
+}
+
+//4853主机模式柜2删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c2_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c2);
+}
+
+// 4853主机模式柜3添加传感器的槽函数
+void Widget::on_addBt_4853_master_c3_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c3);
+}
+
+// 4853主机模式柜3删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c3_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c3);
+}
+
+// 4853主机模式柜4添加传感器的槽函数
+void Widget::on_addBt_4853_master_c4_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c4);
+}
+
+// 4853主机模式柜4删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c4_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c4);
+}
+
+// 4853主机模式柜5添加传感器的槽函数
+void Widget::on_addBt_4853_master_c5_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c5);
+}
+
+// 4853主机模式柜5删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c5_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c5);
+}
+
+// 4853主机模式柜6添加传感器的槽函数
+void Widget::on_addBt_4853_master_c6_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c6);
+}
+
+// 4853主机模式柜6删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c6_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c6);
+}
+
+// 4853主机模式柜7添加传感器的槽函数
+void Widget::on_addBt_4853_master_c7_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c7);
+}
+
+// 4853主机模式柜7删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c7_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c7);
+}
+
+//4853主机模式柜8添加传感器的槽函数
+void Widget::on_addBt_4853_master_c8_clicked()
+{
+    addRowToTableWidget(ui->tableWidget_4853_master_c8);
+}
+
+//4853主机模式柜8删除传感器的槽函数
+void Widget::on_deleteBt_4853_master_c8_clicked()
+{
+    deleteRowFromTableWidget(ui->tableWidget_4853_master_c8);
+}
+
+//采集器一键配置
+void Widget::on_disposeBt_clicked() {
+
+
+    QString resmode1 = ui->resmode_comboBox_4851->currentText();
+    QString resmode2 = ui->resmode_comboBox_4852->currentText();
+    QString resmode3 = ui->resmode_comboBox_4853->currentText();
+
+    int count = 0;
+    if (resmode1 == "slave") count++;
+    if (resmode2 == "slave") count++;
+    if (resmode3 == "slave") count++;
+    if (count != 1) {
+          QMessageBox::warning(this, "错误", "请检查配置方案，注意有且仅有一路RS-485设置为从机");
+          return;
+      }
+
+
+    // 获取被选中的单选按钮的值
+    QButtonGroup *buttonGroup = new QButtonGroup(this);
+    buttonGroup->addButton(ui->radioButton_uart_baudrate_2400, 2400);
+    buttonGroup->addButton(ui->radioButton_uart_baudrate_4800, 4800);
+    buttonGroup->addButton(ui->radioButton_uart_baudrate_9600, 9600);
+    buttonGroup->addButton(ui->radioButton_uart_baudrate_115200, 115200);
+    buttonGroup->addButton(ui->radioButton_uart_baudrate_38400, 38400);
+    int checkedButtonValue = buttonGroup->checkedId();
+
+    for (int deviceNumber = 4851; deviceNumber <= 4853; deviceNumber++) {
+               QJsonObject deviceObj;
+               deviceObj["mastermap"] = createMasterJsonObj(deviceNumber);
+               config[QString::number(deviceNumber)] = deviceObj;
+           }
+
+       updateModeKey();//在485X的子键中加入一个名为“mode”的子键，键值为“resmode_comboBox_485X”的值
+
+       addBaseConfigToSlaveKeys();//用于生成"base_config"
+
+       addInternetModeToConfig();//调用网口模式配置的函数
+
+       addUartBaseConfigToConfig();//调用Uart串口波特率配置的函数
+
+    // Save config.json
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString folderPath = desktopPath + "/disposeJson";
+    QDir dir(folderPath);
+    if (!dir.exists()) {
+        dir.mkpath(folderPath);
+    }
+
+    QFile configFile(folderPath + "/config.json");
+    if (configFile.open(QFile::WriteOnly)) {
+        QJsonDocument configDoc(config);
+        configFile.write(configDoc.toJson());
+        configFile.close();
+        QMessageBox::information(this, "Success", "配置文件已更新");
+    } else {
+        QMessageBox::critical(this, "Error", "Unable to save config.json.");
+    }
+}
+
+
+QJsonObject Widget::createMasterJsonObj(int deviceNumber) {
+
+    QJsonObject cabinetsObj;
+    for (int i = 1; i <= 8; i++) {
+        QTableWidget *tableWidget = findChild<QTableWidget*>(QString("tableWidget_%1_master_c%2").arg(deviceNumber).arg(i));
+        if (!tableWidget) {
+            continue;
+        }
+        int rowCount = tableWidget->rowCount(); // 获取当前tableWidget的行数
+
+        QJsonArray cabinetArray; // 修改为QJsonArray
+        for (int j = 1; j <= 20; j++) {
+            QWidget *cellWidget = nullptr;
+            QString sensorType;
+            if (j <= rowCount) {
+                cellWidget = tableWidget->cellWidget(j - 1, 0);
+            }
+            if (cellWidget) {
+                if (QComboBox *comboBox = qobject_cast<QComboBox *>(cellWidget)) {
+                    QString chineseType = comboBox->currentText();
+
+                    if (chineseType == "TEV 和超声波（断路器）") {
+                        sensorType = "TEV_and_ultrasonic_circuit_breaker";
+                    } else if (chineseType == "断路器触头温度") {
+                        sensorType = "circuit_breaker_contact_temperature";
+                    } else if (chineseType == "内部气压") {
+                        sensorType = "internal_air_pressure";
+                    } else if (chineseType == "分合闸时间") {
+                        sensorType = "opening_and_closing_time";
+                    } else if (chineseType == "动作电流") {
+                        sensorType = "operation_current";
+                    } else if (chineseType == "TEV 和超声波（母线）") {
+                        sensorType = "TEV_and_ultrasonic_busbar";
+                    } else if (chineseType == "母线与断路器连接处温度") {
+                        sensorType = "busbar_and_circuit_breaker_connection_temperature";
+                    } else if (chineseType == "绝缘电阻") {
+                        sensorType = "Insulation_Resistance";
+                    }else if(chineseType == "TEV 和超声波（出线电缆）") {
+                        sensorType = "TEV_and_Ultrasonic_Outgoing_Cable";
+                    } else if (chineseType == "电缆接头温度") {
+                        sensorType = "Cable_Joint_Temperature";
+                    } else {
+                        sensorType = "nonesensor";
+                    }
+                } else {
+                    sensorType = "nonesensor";
+                }
+            } // 这里添加了一个右括号
+            // 只有当sensorType不为nonesensor时，才将其添加到cabinetArray中
+                  if (sensorType != "nonesensor") {
+                      cabinetArray.append(sensorType);
+                  } else {
+                      break; // 当遇到第一个nonesensor时，跳出循环
+                  }
+              }
+              cabinetsObj[QString("cabinet%1").arg(i)] = cabinetArray; // 修改为cabinetArray
+          }
+       return removeEmptyStringsFromArrays(cabinetsObj);
+      }
+
+
+void Widget::loadUsers() {
+    if (usersFile.exists()) {
+        usersFile.open(QIODevice::ReadOnly | QIODevice::Text);
+        QTextStream in(&usersFile);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList data = line.split(",");
+            int row = ui->userTableWidget->rowCount();
+            ui->userTableWidget->insertRow(row);
+            for (int i = 0; i < data.size(); ++i) {
+                QTableWidgetItem *item = new QTableWidgetItem(data[i]);
+                ui->userTableWidget->setItem(row, i, item);
+                if (i == 4 || i == 5) { // 部门和账户类型
+                    QComboBox *comboBox = new QComboBox();
+                    if (i == 4) {
+                        comboBox->addItem("测试中心");
+                        comboBox->addItem("研发中心");
+                    } else {
+                        comboBox->addItem("普通管理员");
+                        comboBox->addItem("超级管理员");
+                    }
+                    comboBox->setCurrentText(data[i]);
+                    ui->userTableWidget->setCellWidget(row, i, comboBox);
+                }
+            }
+        }
+        usersFile.close();
+    } else {
+        usersFile.open(QIODevice::WriteOnly | QIODevice::Text);
+        usersFile.close();
+
+        // 默认用户
+        QStringList defaultUsers = {
+            "001,superadmin1,789,19852126666,测试中心,超级管理员",
+            "002,admin1,123,19852127777,测试中心,普通管理员",
+            "003,admin2,456,19852128888,研发中心,普通管理员"
+        };
+
+    for (const QString &user : defaultUsers) {
+        QStringList data = user.split(",");
+        int row = ui->userTableWidget->rowCount();
+        ui->userTableWidget->insertRow(row);
+        for (int i = 0; i < data.size();++i) {
+            QTableWidgetItem *item = new QTableWidgetItem(data[i]);
+            ui->userTableWidget->setItem(row, i, item);
+            if (i == 4 || i == 5) { // 部门和账户类型
+            QComboBox *comboBox = new QComboBox();
+            if (i == 4) {
+            comboBox->addItem("测试中心");
+            comboBox->addItem("研发中心");
+            } else {
+            comboBox->addItem("普通管理员");
+            comboBox->addItem("超级管理员");
+            }
+            comboBox->setCurrentText(data[i]);
+            ui->userTableWidget->setCellWidget(row, i, comboBox);
+            }
+            }
+            }
+            saveUsers();
+            }
+            }
+
+
+
+        void Widget::saveUsers() {
+
+        qDebug() << "Saving users...";
+        usersFile.open(QIODevice::WriteOnly | QIODevice::Text);
+        QTextStream out(&usersFile);
+        for (int row = 0; row < ui->userTableWidget->rowCount(); ++row) {
+        QStringList rowData;
+        for (int col = 0; col < ui->userTableWidget->columnCount(); ++col) {
+        if (col == 4 || col == 5) {
+        QComboBox *comboBox = qobject_cast<QComboBox *>(ui->userTableWidget->cellWidget(row, col));
+        rowData << comboBox->currentText();
+        } else {
+        rowData << ui->userTableWidget->item(row, col)->text();
+        }
+        }
+        out << rowData.join(",") << "\n";
+        }
+        usersFile.close();
+        qDebug() << "Users saved.";
+        }
+
+        void Widget::on_addUserButton_clicked()
+        {
+            disconnect(ui->userTableWidget, &QTableWidget::itemChanged, this, &Widget::onUserTableItemChanged);
+
+            int newRow = ui->userTableWidget->rowCount();
+            ui->userTableWidget->insertRow(newRow);
+
+            QString id = QString::number(newRow + 1).rightJustified(3, '0');
+            QTableWidgetItem *idItem = new QTableWidgetItem(id);
+            idItem->setTextAlignment(Qt::AlignCenter);
+            ui->userTableWidget->setItem(newRow, 0, idItem);
+
+            for (int column = 1; column < ui->userTableWidget->columnCount() - 2; ++column) {
+                QTableWidgetItem *item = new QTableWidgetItem();
+                item->setTextAlignment(Qt::AlignCenter);
+                ui->userTableWidget->setItem(newRow, column, item);
+            }
+
+            QComboBox *departmentComboBox = new QComboBox();
+            departmentComboBox->addItems({"测试中心", "研发中心"});
+            connect(departmentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Widget::onComboBoxIndexChanged);
+            ui->userTableWidget->setCellWidget(newRow, 4, departmentComboBox);
+
+            QComboBox *accountTypeComboBox = new QComboBox();
+            accountTypeComboBox->addItems({"普通管理员", "超级管理员"});
+            connect(accountTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Widget::onComboBoxIndexChanged);
+            ui->userTableWidget->setCellWidget(newRow, 5, accountTypeComboBox);
+
+            connect(ui->userTableWidget, &QTableWidget::itemChanged, this, &Widget::onUserTableItemChanged);
+        }
+
+
+
+        void Widget::on_deleteUserButton_clicked()
+        {
+        QList<QTableWidgetItem *> selectedItems = ui->userTableWidget->selectedItems();
+        if (!selectedItems.isEmpty()) {
+        ui->userTableWidget->removeRow(selectedItems.first()->row());
+        saveUsers();
+        }
+        }
+
+        void Widget::onUserTableItemChanged(QTableWidgetItem *item)
+        {
+            saveUsers();
+        }
+
+        void Widget::onComboBoxIndexChanged()
+        {
+            saveUsers();
+        }
+
+        void Widget::checkFileExistence()
+        {
+            QString filePath = QDir::homePath() + "/Desktop/users.txt";
+            QFile file(filePath);
+
+            if (!file.exists()) {
+                QMessageBox::warning(this, tr("警告"), tr("user.txt 文件丢失，将自动重新创建。"));
+                saveUsers(); // 如果文件丢失，重新创建并保存用户数据
+            }
+        }
+
+
+        void Widget::updateDateTime()//显示系统时间
+        {
+            QDateTime currentDateTime = QDateTime::currentDateTime();
+            QString dateTimeText = currentDateTime.toString("yyyy-MM-dd hh:mm:ss");
+            ui->dateTimeLabel->setText(dateTimeText);
+        }
+
+
+        void Widget::saveConfigToFile()
+        {
+            QString configFileName = "config.json";
+            QFile configFile(configFileName);
+
+            if (configFile.open(QIODevice::WriteOnly | QIODevice::Text))
+            {
+                QJsonDocument configDoc(config);
+                configFile.write(configDoc.toJson(QJsonDocument::Indented));
+                configFile.close();
+            }
+            else
+            {
+                QMessageBox::warning(this, tr("Error"), tr("Unable to save config file."));
+            }
+        }
+
+
+
+        void Widget::updateModeKey() {
+            for (const QString& key : config.keys()) {
+                if (key.startsWith("485")) {
+                    QString modeValue;
+
+                    // 根据键名获取对应下拉框的值
+                    if (key == "4851") {
+                        modeValue = ui->resmode_comboBox_4851->currentText();
+                    } else if (key == "4852") {
+                        modeValue = ui->resmode_comboBox_4852->currentText();
+                    } else if (key == "4853") {
+                        modeValue = ui->resmode_comboBox_4853->currentText();
+                    }
+
+                    QJsonObject keyObject = config[key].toObject();
+                    keyObject["mode"] = modeValue;
+                    config[key] = keyObject;
+                }
+            }
+            saveConfigToFile();
+        }
+
+
+
+
+        void Widget::addBaseConfigToSlaveKeys() {
+            for (const QString& key : config.keys()) {
+                if (key.startsWith("485")) {
+                    QJsonObject keyObject = config[key].toObject();
+                    QJsonObject baseConfig;
+
+                    QString agreetypeKey = QString("agreetype_comboBox_%1").arg(key);
+                    QString baundrateKey = QString("baundrate_comboBox_%1").arg(key);
+                    QString checkbitKey = QString("checkbit_comboBox_%1").arg(key);
+                    QString databitKey = QString("databit_comboBox_%1").arg(key);
+                    QString stopbitKey = QString("stopbit_comboBox_%1").arg(key);
+
+                    QComboBox *agreetypeComboBox = findChild<QComboBox*>(agreetypeKey);
+                    QComboBox *baundrateComboBox = findChild<QComboBox*>(baundrateKey);
+                    QComboBox *checkbitComboBox = findChild<QComboBox*>(checkbitKey);
+                    QComboBox *databitComboBox = findChild<QComboBox*>(databitKey);
+                    QComboBox *stopbitComboBox = findChild<QComboBox*>(stopbitKey);
+
+                    if (agreetypeComboBox && baundrateComboBox && checkbitComboBox && databitComboBox && stopbitComboBox) {
+                        baseConfig["agreetype"] = agreetypeComboBox->currentText();
+                        baseConfig["baundrate"] = baundrateComboBox->currentText().toInt();
+                        baseConfig["checkbit"] = checkbitComboBox->currentText();
+                        baseConfig["databit"] = databitComboBox->currentText().toInt();
+                        baseConfig["stopbit"] = stopbitComboBox->currentText().toInt();
+
+                        keyObject["base_config"] = baseConfig;
+                        config[key] = keyObject;
+                    }
+                }
+            }
+
+            saveConfigToFile();
+        }
+
+
+        void Widget::addInternetModeToConfig() {
+            QComboBox *resmodeComboBoxInternet = findChild<QComboBox*>("resmode_comboBox_internet");
+
+            if (resmodeComboBoxInternet) {
+                QJsonObject internetObject;
+                internetObject["mode"] = resmodeComboBoxInternet->currentText();
+                config["internet"] = internetObject;
+            }
+
+            saveConfigToFile();
+        }
+
+
+
+        void Widget::addUartBaseConfigToConfig() {
+            QRadioButton *baudrate2400 = findChild<QRadioButton*>("radioButton_uart_baudrate_2400");
+            QRadioButton *baudrate4800 = findChild<QRadioButton*>("radioButton_uart_baudrate_4800");
+            QRadioButton *baudrate9600 = findChild<QRadioButton*>("radioButton_uart_baudrate_9600");
+            QRadioButton *baudrate19200 = findChild<QRadioButton*>("radioButton_uart_baudrate_19200");
+            QRadioButton *baudrate38400 = findChild<QRadioButton*>("radioButton_uart_baudrate_38400");
+            QRadioButton *baudrate115200 = findChild<QRadioButton*>("radioButton_uart_baudrate_115200");
+
+            int baudrate = 0;
+
+            if (baudrate2400 && baudrate2400->isChecked()) {
+                baudrate = 2400;
+            } else if (baudrate4800 && baudrate4800->isChecked()) {
+                baudrate = 4800;
+            } else if (baudrate9600 && baudrate9600->isChecked()) {
+                baudrate = 9600;
+            } else if (baudrate19200 && baudrate19200->isChecked()) {
+                baudrate = 19200;
+            } else if (baudrate38400 && baudrate38400->isChecked()) {
+                baudrate = 38400;
+            } else if (baudrate115200 && baudrate115200->isChecked()) {
+                baudrate = 115200;
+            }
+
+            QJsonObject baseConfig;
+            baseConfig["baundrate"] = baudrate;
+
+            QJsonObject uartObject;
+            uartObject["base_config"] = baseConfig;
+            config["uart"] = uartObject;
+
+            saveConfigToFile();
+        }
+
+
+
+        QJsonObject Widget::removeEmptyStringsFromArrays(QJsonObject &cabinetsObj) {
+            QJsonObject result;
+            QStringList keys = cabinetsObj.keys();
+
+            for (const QString &key : keys) {
+                QJsonArray array = cabinetsObj[key].toArray();
+                QJsonArray newArray;
+
+                for (const QJsonValue &value : array) {
+                    if (!value.toString().isEmpty()) {
+                        newArray.append(value);
+                    }
+                }
+
+                result[key] = newArray;
+            }
+
+            return result;
+        }
+
+        bool Widget::isComboBoxValueSlave(QComboBox *comboBox) {
+            QString currentValue = comboBox->currentText();
+            return currentValue == "slave";
+        }
+
+

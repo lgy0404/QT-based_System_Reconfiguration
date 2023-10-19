@@ -1,0 +1,40 @@
+<RCC>
+    <qresource prefix="/">
+        <file>background.png</file>
+        <file>logo1.png</file>
+        <file>logo2.png</file>
+        <file>logo3.png</file>
+        <file>main.cpp</file>
+        <file>password.png</file>
+        <file>widget.cpp</file>
+        <file>widget.h</file>
+        <file>user.png</file>
+        <file>login.cpp</file>
+        <file>login.h</file>
+        <file>login1.cpp</file>
+        <file>login1.h</file>
+        <file>ui_login1.h</file>
+        <file>images/C-open.png</file>
+        <file>images/D.png</file>
+        <file>images/V-open-close.png</file>
+        <file>images/696CB-close-close.png</file>
+        <file>images/696CBBR-close-close.png</file>
+        <file>images/BE-open.png</file>
+        <file>images/DE-openPE.png</file>
+        <file>images/F-open.png</file>
+        <file>images/M.png</file>
+        <file>images/PT.png</file>
+        <file>images/PTC500-open.png</file>
+        <file>images/PTC600-open.png</file>
+        <file>images/SL-close.png</file>
+        <file>images/SV-open-open.png</file>
+        <file>images/SV25SV20-open.png</file>
+        <file>images/V25V20-open-open.png</file>
+        <file>images/uart.png</file>
+        <file>customcombobox.cpp</file>
+        <file>customcombobox.h</file>
+        <file>customtabstyle.cpp</file>
+        <file>customtabstyle.h</file>
+        <file>digital-7.ttf</file>
+    </qresource>
+</RCC>

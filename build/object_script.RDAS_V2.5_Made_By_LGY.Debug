@@ -1,0 +1,16 @@
+INPUT(
+./debug\main.o
+./debug\widget.o
+./debug\login1.o
+./debug\customtabstyle.o
+./debug\Ymodem.o
+./debug\YmodemFileReceive.o
+./debug\YmodemFileTransmit.o
+./debug\md5check.o
+./debug\qrc_logo.o
+./debug\moc_widget.o
+./debug\moc_login1.o
+./debug\moc_YmodemFileReceive.o
+./debug\moc_YmodemFileTransmit.o
+./debug\moc_md5check.o
+);

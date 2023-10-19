@@ -1,0 +1,750 @@
+{
+    "4851": {
+        "base_config": {
+            "agreetype": "Modbus RTU",
+            "baundrate": 9600,
+            "checkbit": "none",
+            "databit": 8,
+            "stopbit": 1
+        },
+        "mastermap": {
+            "cabinet1": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet2": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet3": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet4": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet5": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet6": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet7": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet8": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ]
+        },
+        "mode": "master"
+    },
+    "4852": {
+        "base_config": {
+            "agreetype": "Modbus RTU",
+            "baundrate": 9600,
+            "checkbit": "none",
+            "databit": 8,
+            "stopbit": 1
+        },
+        "mastermap": {
+            "cabinet1": [
+                "opening_and_closing_time",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet2": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet3": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet4": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet5": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet6": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet7": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ],
+            "cabinet8": [
+                "TEV_and_ultrasonic_circuit_breaker",
+                "circuit_breaker_contact_temperature",
+                "internal_air_pressure",
+                "opening_and_closing_time",
+                "operation_current",
+                "TEV_and_ultrasonic_busbar",
+                "busbar_and_circuit_breaker_connection_temperature",
+                "Insulation_Resistance"
+            ]
+        },
+        "mode": "master"
+    },
+    "4853": {
+        "base_config": {
+            "agreetype": "Modbus RTU",
+            "baundrate": 9600,
+            "checkbit": "none",
+            "databit": 8,
+            "stopbit": 1
+        },
+        "mode": "slave",
+        "slavemap": {
+            "4851": {
+                "cabinet1": {
+                    "Insulation_Resistance": [
+                        39,
+                        39
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        8,
+                        37
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        1,
+                        1
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        38,
+                        38
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        2,
+                        2
+                    ],
+                    "internal_air_pressure": [
+                        3,
+                        5
+                    ],
+                    "opening_and_closing_time": [
+                        6,
+                        6
+                    ],
+                    "operation_current": [
+                        7,
+                        7
+                    ]
+                },
+                "cabinet2": {
+                    "Insulation_Resistance": [
+                        78,
+                        78
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        47,
+                        76
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        40,
+                        40
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        77,
+                        77
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        41,
+                        41
+                    ],
+                    "internal_air_pressure": [
+                        42,
+                        44
+                    ],
+                    "opening_and_closing_time": [
+                        45,
+                        45
+                    ],
+                    "operation_current": [
+                        46,
+                        46
+                    ]
+                },
+                "cabinet3": {
+                    "Insulation_Resistance": [
+                        117,
+                        117
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        86,
+                        115
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        79,
+                        79
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        116,
+                        116
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        80,
+                        80
+                    ],
+                    "internal_air_pressure": [
+                        81,
+                        83
+                    ],
+                    "opening_and_closing_time": [
+                        84,
+                        84
+                    ],
+                    "operation_current": [
+                        85,
+                        85
+                    ]
+                },
+                "cabinet4": {
+                    "Insulation_Resistance": [
+                        156,
+                        156
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        125,
+                        154
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        118,
+                        118
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        155,
+                        155
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        119,
+                        119
+                    ],
+                    "internal_air_pressure": [
+                        120,
+                        122
+                    ],
+                    "opening_and_closing_time": [
+                        123,
+                        123
+                    ],
+                    "operation_current": [
+                        124,
+                        124
+                    ]
+                },
+                "cabinet5": {
+                    "Insulation_Resistance": [
+                        195,
+                        195
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        164,
+                        193
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        157,
+                        157
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        194,
+                        194
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        158,
+                        158
+                    ],
+                    "internal_air_pressure": [
+                        159,
+                        161
+                    ],
+                    "opening_and_closing_time": [
+                        162,
+                        162
+                    ],
+                    "operation_current": [
+                        163,
+                        163
+                    ]
+                },
+                "cabinet6": {
+                    "Insulation_Resistance": [
+                        234,
+                        234
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        203,
+                        232
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        196,
+                        196
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        233,
+                        233
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        197,
+                        197
+                    ],
+                    "internal_air_pressure": [
+                        198,
+                        200
+                    ],
+                    "opening_and_closing_time": [
+                        201,
+                        201
+                    ],
+                    "operation_current": [
+                        202,
+                        202
+                    ]
+                },
+                "cabinet7": {
+                    "Insulation_Resistance": [
+                        273,
+                        273
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        242,
+                        271
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        235,
+                        235
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        272,
+                        272
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        236,
+                        236
+                    ],
+                    "internal_air_pressure": [
+                        237,
+                        239
+                    ],
+                    "opening_and_closing_time": [
+                        240,
+                        240
+                    ],
+                    "operation_current": [
+                        241,
+                        241
+                    ]
+                },
+                "cabinet8": {
+                    "Insulation_Resistance": [
+                        312,
+                        312
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        281,
+                        310
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        274,
+                        274
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        311,
+                        311
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        275,
+                        275
+                    ],
+                    "internal_air_pressure": [
+                        276,
+                        278
+                    ],
+                    "opening_and_closing_time": [
+                        279,
+                        279
+                    ],
+                    "operation_current": [
+                        280,
+                        280
+                    ]
+                }
+            },
+            "4852": {
+                "cabinet1": {
+                    "Insulation_Resistance": [
+                        351,
+                        351
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        320,
+                        349
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        350,
+                        350
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        314,
+                        314
+                    ],
+                    "internal_air_pressure": [
+                        315,
+                        317
+                    ],
+                    "opening_and_closing_time": [
+                        318,
+                        318
+                    ],
+                    "operation_current": [
+                        319,
+                        319
+                    ]
+                },
+                "cabinet2": {
+                    "Insulation_Resistance": [
+                        390,
+                        390
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        359,
+                        388
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        352,
+                        352
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        389,
+                        389
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        353,
+                        353
+                    ],
+                    "internal_air_pressure": [
+                        354,
+                        356
+                    ],
+                    "opening_and_closing_time": [
+                        357,
+                        357
+                    ],
+                    "operation_current": [
+                        358,
+                        358
+                    ]
+                },
+                "cabinet3": {
+                    "Insulation_Resistance": [
+                        429,
+                        429
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        398,
+                        427
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        391,
+                        391
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        428,
+                        428
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        392,
+                        392
+                    ],
+                    "internal_air_pressure": [
+                        393,
+                        395
+                    ],
+                    "opening_and_closing_time": [
+                        396,
+                        396
+                    ],
+                    "operation_current": [
+                        397,
+                        397
+                    ]
+                },
+                "cabinet4": {
+                    "Insulation_Resistance": [
+                        468,
+                        468
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        437,
+                        466
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        430,
+                        430
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        467,
+                        467
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        431,
+                        431
+                    ],
+                    "internal_air_pressure": [
+                        432,
+                        434
+                    ],
+                    "opening_and_closing_time": [
+                        435,
+                        435
+                    ],
+                    "operation_current": [
+                        436,
+                        436
+                    ]
+                },
+                "cabinet5": {
+                    "Insulation_Resistance": [
+                        507,
+                        507
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        476,
+                        505
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        469,
+                        469
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        506,
+                        506
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        470,
+                        470
+                    ],
+                    "internal_air_pressure": [
+                        471,
+                        473
+                    ],
+                    "opening_and_closing_time": [
+                        474,
+                        474
+                    ],
+                    "operation_current": [
+                        475,
+                        475
+                    ]
+                },
+                "cabinet6": {
+                    "Insulation_Resistance": [
+                        546,
+                        546
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        515,
+                        544
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        508,
+                        508
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        545,
+                        545
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        509,
+                        509
+                    ],
+                    "internal_air_pressure": [
+                        510,
+                        512
+                    ],
+                    "opening_and_closing_time": [
+                        513,
+                        513
+                    ],
+                    "operation_current": [
+                        514,
+                        514
+                    ]
+                },
+                "cabinet7": {
+                    "Insulation_Resistance": [
+                        585,
+                        585
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        554,
+                        583
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        547,
+                        547
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        584,
+                        584
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        548,
+                        548
+                    ],
+                    "internal_air_pressure": [
+                        549,
+                        551
+                    ],
+                    "opening_and_closing_time": [
+                        552,
+                        552
+                    ],
+                    "operation_current": [
+                        553,
+                        553
+                    ]
+                },
+                "cabinet8": {
+                    "Insulation_Resistance": [
+                        624,
+                        624
+                    ],
+                    "TEV_and_ultrasonic_busbar": [
+                        593,
+                        622
+                    ],
+                    "TEV_and_ultrasonic_circuit_breaker": [
+                        586,
+                        586
+                    ],
+                    "busbar_and_circuit_breaker_connection_temperature": [
+                        623,
+                        623
+                    ],
+                    "circuit_breaker_contact_temperature": [
+                        587,
+                        587
+                    ],
+                    "internal_air_pressure": [
+                        588,
+                        590
+                    ],
+                    "opening_and_closing_time": [
+                        591,
+                        591
+                    ],
+                    "operation_current": [
+                        592,
+                        592
+                    ]
+                }
+            }
+        }
+    },
+    "internet": {
+        "mode": "master"
+    },
+    "uart": {
+        "base_config": {
+            "baundrate": 9600
+        }
+    }
+}

@@ -1,0 +1,16 @@
+INPUT(
+./release\main.o
+./release\widget.o
+./release\login1.o
+./release\customtabstyle.o
+./release\Ymodem.o
+./release\YmodemFileReceive.o
+./release\YmodemFileTransmit.o
+./release\md5check.o
+./release\qrc_logo.o
+./release\moc_widget.o
+./release\moc_login1.o
+./release\moc_YmodemFileReceive.o
+./release\moc_YmodemFileTransmit.o
+./release\moc_md5check.o
+);
